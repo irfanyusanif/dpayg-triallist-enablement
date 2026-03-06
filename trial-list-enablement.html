@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trial List Enablement Tool</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .step {
+            margin-bottom: 35px;
+            padding: 25px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            background: #fafafa;
+            transition: all 0.3s ease;
+        }
+
+        .step:hover {
+            border-color: #667eea;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+        }
+
+        .step.active {
+            border-color: #667eea;
+            background: #f8f9ff;
+        }
+
+        .step.completed {
+            border-color: #4caf50;
+            background: #f1f8f4;
+        }
+
+        .step-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .step-number {
+            width: 40px;
+            height: 40px;
+            background: #667eea;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 15px;
+            font-size: 18px;
+        }
+
+        .step.completed .step-number {
+            background: #4caf50;
+        }
+
+        .step-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .step-description {
+            color: #666;
+            margin-bottom: 15px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .file-upload {
+            position: relative;
+            display: inline-block;
+        }
+
+        input[type="file"] {
+            position: absolute;
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .file-label {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 30px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: inline-block;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .file-label:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .file-name {
+            display: inline-block;
+            margin-left: 15px;
+            color: #4caf50;
+            font-weight: 500;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            resize: vertical;
+            transition: border-color 0.3s ease;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .success-message {
+            background: #4caf50;
+            color: white;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 15px;
+            display: none;
+            animation: slideIn 0.3s ease;
+        }
+
+        .error-message {
+            background: #f44336;
+            color: white;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 15px;
+            display: none;
+            animation: slideIn 0.3s ease;
+        }
+
+        .warning-message {
+            background: #ff9800;
+            color: white;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 15px;
+            display: none;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 12px;
+            margin-top: 10px;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #1565c0;
+        }
+
+        .json-preview {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 10px;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+        }
+
+        .checkmark {
+            color: #4caf50;
+            font-size: 20px;
+            margin-left: 10px;
+        }
+
+        .stats-box {
+            background: #fff;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 15px;
+            display: none;
+        }
+
+        .stats-box h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            margin: 5px 0;
+            background: #f8f9ff;
+            border-radius: 4px;
+        }
+
+        .stat-label {
+            color: #666;
+            font-weight: 500;
+        }
+
+        .stat-value {
+            color: #667eea;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .stat-value.success {
+            color: #4caf50;
+        }
+
+        .stat-value.warning {
+            color: #ff9800;
+        }
+
+        .stat-value.error {
+            color: #f44336;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 Trial List Enablement Tool</h1>
+            <p>Streamline your trial enablement workflow in 5 easy steps</p>
+        </div>
+
+        <div class="content">
+            <!-- Step 1: Download Template -->
+            <div class="step active" id="step1">
+                <div class="step-header">
+                    <div class="step-number">1</div>
+                    <div class="step-title">Download Excel Template</div>
+                </div>
+                <div class="step-description">
+                    <strong>Instructions:</strong>
+                    <br>• Download the template
+                    <br>• Remove the sample rows from template
+                    <br>• Paste one batch rows from the "Trial Participants" excel file
+                    <br>• All the records must belong to single batch
+                </div>
+                <button onclick="downloadTemplate()">📥 Download Template</button>
+                <div class="success-message" id="step1-success">✓ Template downloaded successfully!</div>
+            </div>
+
+            <!-- Step 2: Upload Excel -->
+            <div class="step" id="step2">
+                <div class="step-header">
+                    <div class="step-number">2</div>
+                    <div class="step-title">Upload Excel File</div>
+                </div>
+                <div class="step-description">
+                    <strong>Instructions:</strong>
+                    <br>• If you're on Mac, you can export numbers file as excel (Share → Export to Excel)
+                    <br>• This will extract emails and generate API request
+                    <br>• Will also show any duplicates and add unique emails in request
+                </div>
+                <div class="file-upload">
+                    <input type="file" id="excelFile" accept=".xlsx,.xls" onchange="handleFileUpload(event)">
+                    <label for="excelFile" class="file-label">📤 Choose File</label>
+                    <span class="file-name" id="fileName"></span>
+                </div>
+                <div class="success-message" id="step2-success">✓ File uploaded and processed successfully!</div>
+                <div class="warning-message" id="step2-warning"></div>
+                <div class="error-message" id="step2-error"></div>
+            </div>
+
+            <!-- Step 3: Request Payload -->
+            <div class="step" id="step3">
+                <div class="step-header">
+                    <div class="step-number">3</div>
+                    <div class="step-title">Request Payload (Auto-Generated)</div>
+                </div>
+                <div class="step-description">
+                    The request payload is automatically generated from the uploaded Excel file. Copy this for your API request.
+                </div>
+                <div class="json-preview" id="requestPayload">Upload an Excel file first...</div>
+                <button onclick="copyRequestPayload()" id="copyRequestBtn" disabled>📋 Copy to Clipboard</button>
+                <div class="success-message" id="step3-success">✓ Copied to clipboard!</div>
+            </div>
+
+            <!-- Step 4: Paste API Response -->
+            <div class="step" id="step4">
+                <div class="step-header">
+                    <div class="step-number">4</div>
+                    <div class="step-title">Paste API Response</div>
+                </div>
+                <div class="step-description">
+                    After making the API call, paste the response below. The response should contain addedEmails, alreadyAddedEmails, and emailsWithoutCustomerId arrays.
+                </div>
+                <textarea id="apiResponse" rows="8" placeholder='Paste your API response here, e.g.:
+{
+  "addedEmails": ["user1@example.com"],
+  "alreadyAddedEmails": ["user2@example.com"],
+  "emailsWithoutCustomerId": ["user3@example.com"]
+}'></textarea>
+                <button onclick="processApiResponse()" id="processBtn" disabled>✨ Process Response</button>
+                <div class="success-message" id="step4-success">✓ Response processed successfully!</div>
+                <div class="error-message" id="step4-error"></div>
+                <div class="stats-box" id="statsBox">
+                    <h3>📊 Summary Statistics</h3>
+                    <div class="stat-item">
+                        <span class="stat-label">New Users Added:</span>
+                        <span class="stat-value success" id="newUsersCount">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Already in Trial List:</span>
+                        <span class="stat-value warning" id="alreadyAddedCount">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Trial access Failed (No EMR account):</span>
+                        <span class="stat-value error" id="failedCount">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Total Processed:</span>
+                        <span class="stat-value" id="totalCount">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 5: Download Updated Excel -->
+            <div class="step" id="step5">
+                <div class="step-header">
+                    <div class="step-number">5</div>
+                    <div class="step-title">Download Updated Excel</div>
+                </div>
+                <div class="step-description">
+                    <strong>Note:</strong> This excel file has same data as uploaded in step 2, only last 2 columns (Activated date and Trial access Failed) are updated.
+                </div>
+                <button onclick="downloadUpdatedExcel()" id="downloadBtn" disabled>📅 Download Updated Excel</button>
+                <div class="info-box">
+                    <strong>Updated Columns:</strong>
+                    <br>• "Activated date" (Column J) - Current timestamp for successfully added emails (format: M/D/YYYY H:MM)
+                    <br>• "Trial access Failed" (Column K) - "x" for emails without customer ID
+                    <br>• File will be named "trial-list-{Batch}.xlsx" (e.g., trial-list-BP.xlsx)
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let uploadedData = null;
+        let workbook = null;
+        let emails = [];
+        let apiResponseData = null;
+
+        // Step 1: Download Template
+        function downloadTemplate() {
+            // Create sample data with correct structure:
+            // Email | Empty | Empty | Date Added | Platform | Empty | Empty | Batch | Empty | Activated date | Trial access Failed
+            const sampleData = [
+                ['Email', '', '', 'Date Added', 'Platform', '', '', 'Batch', '', 'Activated date', 'Trial access Failed'],
+                ['abc@hotmail.co.uk', '', '', '4/3/2026', 'iOS', '', '', 'BP', '', '', 'x'],
+                ['def@icloud.com', '', '', '4/3/2026', 'iOS', '', '', 'BP', '', '3/4/2026 11:15', ''],
+                ['', '', '', '', '', '', '', '', '', '', ''], // Empty rows for user to fill
+                ['', '', '', '', '', '', '', '', '', '', ''],
+                ['', '', '', '', '', '', '', '', '', '', '']
+            ];
+
+            // Create workbook
+            const ws = XLSX.utils.aoa_to_sheet(sampleData);
+            
+            // Set column widths
+            ws['!cols'] = [
+                { wch: 25 }, // Email
+                { wch: 10 }, // Empty
+                { wch: 10 }, // Empty
+                { wch: 15 }, // Date Added
+                { wch: 12 }, // Platform
+                { wch: 10 }, // Empty
+                { wch: 10 }, // Empty
+                { wch: 10 }, // Batch
+                { wch: 10 }, // Empty
+                { wch: 20 }, // Activated date
+                { wch: 18 }  // Trial access failed
+            ];
+
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Trial List');
+
+            // Download
+            XLSX.writeFile(wb, 'trial-list-template.xlsx');
+
+            // Mark step as completed
+            markStepCompleted(1);
+            showMessage('step1-success');
+            activateStep(2);
+        }
+
+        // Step 2: Handle File Upload
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            document.getElementById('fileName').textContent = file.name;
+            // Hide previous messages
+            hideMessage('step2-warning');
+            hideMessage('step2-error');
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    workbook = XLSX.read(data, { type: 'array' });
+                    
+                    // Get the first sheet
+                    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                    uploadedData = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: '' });
+
+                    // Extract emails from column A (index 0) and batch from column H (index 7)
+                    // Track duplicates
+                    const emailMap = new Map(); // email -> count
+                    const duplicates = [];
+                    emails = [];
+                    let batchValue = '';
+                    
+                    for (let i = 1; i < uploadedData.length; i++) { // Start from 1 to skip header
+                        const email = uploadedData[i][0];
+                        if (email && email.trim() && email.includes('@')) {
+                            const trimmedEmail = email.trim();
+                            
+                            // Track email occurrences
+                            if (emailMap.has(trimmedEmail)) {
+                                emailMap.set(trimmedEmail, emailMap.get(trimmedEmail) + 1);
+                                if (!duplicates.includes(trimmedEmail)) {
+                                    duplicates.push(trimmedEmail);
+                                }
+                            } else {
+                                emailMap.set(trimmedEmail, 1);
+                                emails.push(trimmedEmail);
+                            }
+                            
+                            // Get batch value from column H (index 7) if not already set
+                            if (!batchValue && uploadedData[i][7]) {
+                                batchValue = uploadedData[i][7].trim();
+                            }
+                        }
+                    }
+
+                    if (emails.length === 0) {
+                        showError('step2-error', 'No valid email addresses found in the Excel file.');
+                        return;
+                    }
+
+                    if (!batchValue) {
+                        showError('step2-error', 'No Batch value found in column H.');
+                        return;
+                    }
+
+                    // Show duplicate warning if any
+                    if (duplicates.length > 0) {
+                        const duplicateList = duplicates.map(email => `${email} (${emailMap.get(email)} times)`).join(', ');
+                        showWarning('step2-warning', `⚠ Duplicate emails found and will be added only once: ${duplicateList}`);
+                    }
+
+                    // Store batch value globally
+                    window.batchValue = batchValue;
+
+                    // Generate request payload
+                    generateRequestPayload();
+
+                    // Mark step as completed
+                    markStepCompleted(2);
+                    showMessage('step2-success');
+                    activateStep(3);
+
+                } catch (error) {
+                    showError('step2-error', 'Error reading Excel file: ' + error.message);
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        // Step 3: Generate Request Payload
+        function generateRequestPayload() {
+            const allowedProfiles = emails.map(email => ({
+                email: email,
+                type: "Trial"
+            }));
+
+            const requestPayload = {
+                allowedProfiles: allowedProfiles
+            };
+
+            document.getElementById('requestPayload').textContent = JSON.stringify(requestPayload, null, 2);
+            document.getElementById('copyRequestBtn').disabled = false;
+            document.getElementById('processBtn').disabled = false;
+
+            markStepCompleted(3);
+            activateStep(4);
+        }
+
+        // Copy Request Payload to Clipboard
+        function copyRequestPayload() {
+            const payload = document.getElementById('requestPayload').textContent;
+            navigator.clipboard.writeText(payload).then(() => {
+                showMessage('step3-success');
+                setTimeout(() => hideMessage('step3-success'), 2000);
+            });
+        }
+
+        // Step 4: Process API Response
+        function processApiResponse() {
+            const responseText = document.getElementById('apiResponse').value.trim();
+            
+            if (!responseText) {
+                showError('step4-error', 'Please paste the API response.');
+                return;
+            }
+
+            try {
+                apiResponseData = JSON.parse(responseText);
+                
+                // Validate response structure
+                if (!apiResponseData.addedEmails || !apiResponseData.alreadyAddedEmails || !apiResponseData.emailsWithoutCustomerId) {
+                    throw new Error('Invalid response format. Expected addedEmails, alreadyAddedEmails, and emailsWithoutCustomerId fields.');
+                }
+
+                // Calculate and display statistics
+                const newUsersCount = apiResponseData.addedEmails.length;
+                const alreadyAddedCount = apiResponseData.alreadyAddedEmails.length;
+                const failedCount = apiResponseData.emailsWithoutCustomerId.length;
+                const totalCount = newUsersCount + alreadyAddedCount + failedCount;
+
+                document.getElementById('newUsersCount').textContent = newUsersCount;
+                document.getElementById('alreadyAddedCount').textContent = alreadyAddedCount;
+                document.getElementById('failedCount').textContent = failedCount;
+                document.getElementById('totalCount').textContent = totalCount;
+                document.getElementById('statsBox').style.display = 'block';
+
+                markStepCompleted(4);
+                showMessage('step4-success');
+                activateStep(5);
+                document.getElementById('downloadBtn').disabled = false;
+
+            } catch (error) {
+                showError('step4-error', 'Error parsing JSON: ' + error.message);
+            }
+        }
+
+        // Step 5: Download Updated Excel
+        function downloadUpdatedExcel() {
+            if (!uploadedData || !apiResponseData) {
+                alert('Please complete all previous steps first.');
+                return;
+            }
+
+            // Get current timestamp in the format: M/D/YYYY H:MM
+            const now = new Date();
+            const activatedDate = formatDate(now);
+
+            // Create a copy of the uploaded data
+            const updatedData = uploadedData.map(row => [...row]);
+
+            // Ensure all rows have enough columns (11 columns total)
+            for (let i = 0; i < updatedData.length; i++) {
+                while (updatedData[i].length < 11) {
+                    updatedData[i].push('');
+                }
+            }
+
+            // Update columns J (index 9) and K (index 10) for each email
+            for (let i = 1; i < updatedData.length; i++) {
+                const email = updatedData[i][0];
+                if (!email || !email.trim() || !email.includes('@')) continue;
+
+                const trimmedEmail = email.trim();
+
+                // Check if email is in addedEmails or alreadyAddedEmails
+                if (apiResponseData.addedEmails.includes(trimmedEmail) || 
+                    apiResponseData.alreadyAddedEmails.includes(trimmedEmail)) {
+                    updatedData[i][9] = activatedDate; // Column J - Activated date
+                    updatedData[i][10] = ''; // Column K - Trial access failed (empty)
+                }
+                // Check if email is in emailsWithoutCustomerId
+                else if (apiResponseData.emailsWithoutCustomerId.includes(trimmedEmail)) {
+                    updatedData[i][9] = ''; // Column J - Activated date (empty)
+                    updatedData[i][10] = 'x'; // Column K - Trial access failed
+                }
+            }
+
+            // Create new workbook with updated data
+            const ws = XLSX.utils.aoa_to_sheet(updatedData);
+            
+            // Set column widths
+            ws['!cols'] = [
+                { wch: 25 }, // Email
+                { wch: 10 }, // Empty
+                { wch: 10 }, // Empty
+                { wch: 15 }, // Date Added
+                { wch: 12 }, // Platform
+                { wch: 10 }, // Empty
+                { wch: 10 }, // Empty
+                { wch: 10 }, // Batch
+                { wch: 10 }, // Empty
+                { wch: 20 }, // Activated date
+                { wch: 18 }  // Trial access failed
+            ];
+
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Trial List');
+
+            // Download with batch value in filename
+            const batchValue = window.batchValue || 'unknown';
+            XLSX.writeFile(wb, `trial-list-${batchValue}.xlsx`);
+
+            markStepCompleted(5);
+        }
+
+        // Helper Functions
+        function formatDate(date) {
+            const month = date.getMonth() + 1; // No padding
+            const day = date.getDate(); // No padding
+            const year = date.getFullYear();
+            const hours = date.getHours(); // No padding
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            return `${month}/${day}/${year} ${hours}:${minutes}`;
+        }
+
+        function formatDateForFilename(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            return `${year}${month}${day}-${hours}${minutes}`;
+        }
+
+        function markStepCompleted(stepNumber) {
+            const step = document.getElementById(`step${stepNumber}`);
+            step.classList.add('completed');
+            step.classList.remove('active');
+        }
+
+        function activateStep(stepNumber) {
+            const step = document.getElementById(`step${stepNumber}`);
+            step.classList.add('active');
+        }
+
+        function showMessage(elementId) {
+            const element = document.getElementById(elementId);
+            element.style.display = 'block';
+        }
+
+        function hideMessage(elementId) {
+            const element = document.getElementById(elementId);
+            element.style.display = 'none';
+        }
+
+        function showError(elementId, message) {
+            const element = document.getElementById(elementId);
+            element.textContent = '✗ ' + message;
+            element.style.display = 'block';
+        }
+
+        function showWarning(elementId, message) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.style.display = 'block';
+        }
+    </script>
+</body>
+</html>
